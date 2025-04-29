@@ -53,20 +53,22 @@ body {
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    height: 100vh;
-    overflow: hidden;
+    max-height: 700px;
+    height: fit-content;
 }
 
 .chat-panel {
     display: flex;
     flex-direction: column;
     height: 100%;
+    overflow: hidden;
 }
 
 .chat-body{
     flex-grow: 1;
     overflow-y: auto;
-    max-height: 65vh;
+    max-height: 60vh;
+    min-height: auto;
     height: fit-content;
 }
 
@@ -76,14 +78,15 @@ body {
   }
 
 #messages {
+    flex-grow: 1;
     max-height: 60vh;
+    min-height: auto;
     overflow-y: auto;
     border-bottom: 1px solid #ccc;
     margin-bottom: 10px;
-    padding: 5px;
+    padding: 10px;
     display: flex;
     flex-direction: column;
-    
 }
 
 /* Wraps the name and message */
@@ -186,7 +189,6 @@ button {
     max-width: 100%;
     overflow-x: auto; /* Enables horizontal scrolling */
     overflow-y: hidden; /* Prevents vertical stacking */
-    padding: 5px;
     white-space: nowrap; /* Ensures inline layout */
     max-height: 80px; /* Restricts height */
 }
@@ -434,7 +436,6 @@ a {
 #chat-status-indicator.online{
     background-color: #28a745; /* Green for online */
 }
-
 
 #chat-status-indicator.offline{
     background-color: #6c757d; /* Grey for offline */

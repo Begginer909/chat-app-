@@ -412,16 +412,7 @@ function setupChat(data) {
 	setupEmojiPicker();
   
 	// Add emoji button next to the message input
-	const emojiButton = document.createElement('button');
-	emojiButton.classList.add('btn', 'btn-secondary', 'ms-1');
-	emojiButton.innerHTML = '<i class="far fa-smile"></i>';
-	emojiButton.id = 'emojiButton';
-	
-	// Insert it after the image icon button
-	const imageIconButton = document.getElementById('imageIcon');
-	if (imageIconButton && imageIconButton.parentNode) {
-		imageIconButton.parentNode.insertBefore(emojiButton, imageIconButton.nextSibling);
-	}
+	const emojiButton = document.getElementById('emojiButton');
 	
 	// Set up emoji button click handler
 	emojiButton.addEventListener('click', function() {
