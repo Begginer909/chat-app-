@@ -7,6 +7,7 @@ import authroutes from './routes/auth.js';
 import cookieRoutes from './routes/cookie.js';
 import uploadRoutes from './routes/upload.js';
 import searchRoutes from './routes/message.js';
+import chathistoryRoutes from './routes/chathistory.js';
 import { initializeSocket } from './socket.js';
 import cors from 'cors';
 import cookie from 'cookie-parser';
@@ -54,6 +55,7 @@ app.use('/auth', authroutes);
 app.use('/cookie', cookieRoutes);
 app.use('/api', uploadRoutes);
 app.use('/search', searchRoutes);
+app.use('/chatHistory', chathistoryRoutes);
 
 server.listen(PORT, () => {
 	console.log(`Server running on http://localhost:${PORT}`);

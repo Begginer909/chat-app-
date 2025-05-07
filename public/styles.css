@@ -547,3 +547,62 @@ a {
 .lazy-image {
     transition: opacity 0.3s ease;
 }
+
+.search-container {
+    display: flex;
+    padding: 0.5rem;
+}
+
+.search-container input {
+    flex: 1;
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 0.5rem;
+    margin-right: 0.5rem;
+}
+
+.search-container button {
+    padding: 0.5rem;
+    background-color: #2196f3;
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+}
+
+.search-info {
+    padding: 0.5rem;
+    font-size: 0.8rem;
+    color: #666;
+    text-align: center;
+}
+
+.highlight {
+    background-color: yellow;
+    padding: 0;
+    border-radius: 2px;
+}
+
+.active-highlight {
+    background-color: orange;
+}
+
+.search-navigation {
+    display: flex;
+    align-items: center;
+}
+
+.search-navigation button {
+    margin-left: 0.5rem;
+}
+
+.search-toggle {
+    display: flex;
+    align-items: center;
+    margin-left: 0.5rem;
+    font-size: 0.8rem;
+}
+
+.search-toggle input {
+    margin-right: 0.25rem;
+}

@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	function fetchSearchResults(searchValue) {
 		if (!searchValue.trim()) return Promise.resolve([]); // Prevent empty search requests
 	
-		return fetch('http://localhost:3000/search/recent', {
+		return fetch(`${API_BASE_URL}/search/recent`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ search: searchValue }),

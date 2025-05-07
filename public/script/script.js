@@ -1,14 +1,26 @@
 const socket = io('http://localhost:3000');
+const API_BASE_URL = 'http://localhost:3000'
 const messageInput = document.getElementById('messageInput');
 const messages = document.getElementById('messages');
 const chatName = document.getElementById('name');
 const fullname = document.getElementById('username');
+const searchInputChat = document.getElementById('search-input');
+const searchInfo = document.getElementById('search-info');
+const prevBtn = document.getElementById('prev-btn');
+const nextBtn = document.getElementById('next-btn');
+const serverSearchToggle = document.getElementById('server-search');
+
+
 let userId = null;
 let lastSenderId = null;
 let currentChatGroupID = null;
 let currentChatUserID = null;
+let messageID = null; 
 let chatType;
 
+//Variables for searching chat history
+let searchResultsChat = [];
+let currentResultIndex = -1;
 //Lazy loading variables
 let messagesPage = 1;
 const messagesPerPage = 20;
@@ -164,35 +176,35 @@ function setupImageLazyLoading(imgElement, placeholder, container) {
 }
 
 function setupFileLazyLoading(fileLink) {
-    // Set up Intersection Observer
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            // If the file link is in view
-            if (entry.isIntersecting) {
-                const link = entry.target;
+	// Set up Intersection Observer
+	const observer = new IntersectionObserver((entries) => {
+		entries.forEach(entry => {
+			// If the file link is in view
+			if (entry.isIntersecting) {
+				const link = entry.target;
                 
-                // Set the actual href when in view
-                if (link.dataset.href) {
-                    link.href = link.dataset.href;
-                }
+				// Set the actual href when in view
+				if (link.dataset.href) {
+					link.href = link.dataset.href;
+				}
                 
-                // Stop observing the link
-                observer.unobserve(link);
-            }
-        });
-    }, {
-        // Options: trigger when at least 10% of the link is in view
-        threshold: 0.1,
-        rootMargin: '100px' // Load files 100px before they come into view
-    });
+				// Stop observing the link
+				observer.unobserve(link);
+			}
+		});
+	}, {
+		// Options: trigger when at least 10% of the link is in view
+		threshold: 0.1,
+		rootMargin: '100px' // Load files 100px before they come into view
+	});
     
-    // Start observing the file link
-    observer.observe(fileLink);
+	// Start observing the file link
+	observer.observe(fileLink);
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
 	try {
-		const response = await fetch('http://localhost:3000/cookie/protected', {
+		const response = await fetch(`${API_BASE_URL}/cookie/protected`, {
 			method: 'GET',
 			credentials: 'include',
 		});
@@ -483,7 +495,7 @@ function setupChat(data) {
 		//console.log(`Chat Type is ${chatType}`);
 		//console.log(`GROUP ID IS ${groupID}`);
 
-		fetch('http://localhost:3000/api/upload', {
+		fetch(`${API_BASE_URL}/api/upload`, {
 			method: 'POST',
 			body: formData,
 		})
@@ -837,7 +849,7 @@ function setupChat(data) {
 			limit: messagesPerPage
 		};
 	
-		fetch(`http://localhost:3000/search/getMessages`, {
+		fetch(`${API_BASE_URL}/search/getMessages`, {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json',
@@ -1022,7 +1034,7 @@ function setupChat(data) {
 	//Able to show the users when creating a group
 	async function fetchUsers() {
 		try {
-			const response = await fetch(`http://localhost:3000/search/users?userId=${userId}`);
+			const response = await fetch(`${API_BASE_URL}/search/users?userId=${userId}`);
 			if (!response.ok) throw new Error('Failed to fetch users');
 
 			const users = await response.json();
@@ -1070,7 +1082,7 @@ function setupChat(data) {
 		}
 
 		try {
-			const response = await fetch('http://localhost:3000/search/createGroup', {
+			const response = await fetch(`${API_BASE_URL}/search/createGroup`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ groupName, members, creatorID }),
@@ -1155,7 +1167,7 @@ function setupChat(data) {
 		if (!groupID) return;
 
 		// Fetch online members count for this group
-		fetch(`http://localhost:3000/search/groupMembers?groupID=${groupID}`, {
+		fetch(`${API_BASE_URL}/search/groupMembers?groupID=${groupID}`, {
 			method: 'GET',
 			credentials: 'include',
 		})
@@ -1315,6 +1327,244 @@ function setupChat(data) {
 			updatedStatusIndicator.style.display = 'none';
 		}
 	}
+
+	async function searchMessages(query) {
+		const chatType = currentChatGroupID ? 'group' : 'private';
+		console.log("Message ID:",currentChatGroupID, chatType);
+		try {
+			const response = await fetch(
+				`${API_BASE_URL}/chatHistory/search?value=${encodeURIComponent(query)}&convoID=${currentChatGroupID}&chatType=${chatType}`
+			);
+			
+			if (!response.ok) {
+				throw new Error(`Server returned ${response.status}`);
+			}
+			
+			const results = await response.json();
+			return results;
+		} catch (error) {
+			console.error("Error searching messages:", error);
+			return [];
+		}
+	}
+	
+	function performServerSearch(query) {
+		clearHighlights();
+		searchResultsChat = [];
+		currentResultIndex = -1;
+		
+		// Show loading state
+		searchInfo.textContent = "Searching...";
+		
+		// Call the API search function
+		searchMessages(query)
+			.then(matchingMessages => {
+				console.log(matchingMessages.length, '');
+				if (matchingMessages.length === 0) {
+					searchInfo.textContent = "No matches found";
+					return;
+				}
+				
+				// Process each matching message from server
+				matchingMessages.forEach(message => {
+					const element = document.querySelector(`.message-box[data-id="${message.id}"]`);
+					
+					// If element doesn't exist in DOM, we might need to fetch/render it
+					if (!element) {
+						console.log(`Message ${message.id} not in current view`);
+						// Here you could add code to render this message if needed
+						return;
+					}
+					
+					// Process each match within this message
+					message.matches.forEach(match => {
+						searchResultsChat.push({
+							messageId: message.id,
+							element,
+							startIndex: match.startIndex,
+							endIndex: match.endIndex
+						});
+					});
+				});
+				
+				// Highlight all matches
+				highlightMatches(query);
+				updateSearchInfo();
+				
+				// Navigate to first result
+				if (searchResultsChat.length > 0) {
+					navigateToResult(0);
+				}
+			})
+			.catch(error => {
+				console.error("Search error:", error);
+				searchInfo.textContent = "Error performing search";
+			});
+	}
+	
+	function performClientSearch(query) {
+		clearHighlights();
+		searchResultsChat = [];
+		currentResultIndex = -1;
+		
+		const messageElements = messages.querySelectorAll('.message-box');
+		
+		messageElements.forEach(element => {
+			const messageText = element.textContent;
+			const messageId = element.dataset.id;
+			
+			// Find all occurrences of the query in the message
+			let startIndex = 0;
+			let index;
+			while ((index = messageText.toLowerCase().indexOf(query, startIndex)) !== -1) {
+				searchResultsChat.push({
+					messageId,
+					element,
+					startIndex: index,
+					endIndex: index + query.length
+				});
+				startIndex = index + 1; // Move to next potential match
+			}
+		});
+		
+		// Highlight all matches
+		highlightMatches(query);
+		updateSearchInfo();
+		
+		// Navigate to first result
+		if (searchResultsChat.length > 0) {
+			navigateToResult(0);
+		}
+	}
+	
+	function performSearch() {
+		const query = searchInputChat.value.trim().toLowerCase();
+		
+		if (!query) {
+			clearSearch();
+			return;
+		}
+		
+		if (serverSearchToggle.checked) {
+			// Server-side search
+			performServerSearch(query);
+		} else {
+			// Client-side search
+			performClientSearch(query);
+		}
+	}
+	
+	function highlightMatches(query) {
+		searchResultsChat.forEach((result, index) => {
+			const element = result.element;
+			const text = element.textContent;
+			const beforeMatch = text.substring(0, result.startIndex);
+			const match = text.substring(result.startIndex, result.endIndex);
+			const afterMatch = text.substring(result.endIndex);
+			
+			// Create highlight span with unique data-result-index
+			element.innerHTML = `${beforeMatch}<span class="highlight" data-result-index="${index}">${match}</span>${afterMatch}`;
+		});
+	}
+	
+	// Navigate to a specific search result
+	function navigateToResult(index) {
+		if (searchResultsChat.length === 0) return;
+		
+		// Ensure index is within bounds
+		if (index < 0) index = searchResultsChat.length - 1;
+		if (index >= searchResultsChat.length) index = 0;
+		
+		// Update current index
+		currentResultIndex = index;
+		
+		// Remove active highlight class from all highlights
+		document.querySelectorAll('.highlight').forEach(el => {
+			el.classList.remove('active-highlight');
+		});
+		
+		// Add active class to current highlight
+		const currentHighlight = document.querySelector(`.highlight[data-result-index="${index}"]`);
+		if (currentHighlight) {
+			currentHighlight.classList.add('active-highlight');
+			
+			// Scroll the highlight into view with some padding
+			currentHighlight.scrollIntoView({
+				behavior: 'smooth',
+				block: 'center'
+			});
+		}
+		
+		updateSearchInfo();
+	}
+	
+	// Update search info display
+	function updateSearchInfo() {
+		if (searchResultsChat.length === 0) {
+			searchInfo.textContent = "No matches found";
+		} else {
+			searchInfo.textContent = `${currentResultIndex + 1} of ${searchResultsChat.length} matches`;
+		}
+	}
+	
+	// Clear all highlights
+	function clearHighlights() {
+		const messageElements = messages.querySelectorAll('.message-box');
+		messageElements.forEach(element => {
+			element.innerHTML = element.textContent;
+		});
+	}
+	
+	// Clear search results
+	function clearSearch() {
+		clearHighlights();
+		searchResultsChat = [];
+		currentResultIndex = -1;
+		searchInfo.textContent = "";
+	}
+
+	// Event listeners for search
+	searchInputChat.addEventListener('keypress', e => {
+		if (e.key === 'Enter') {
+			if (searchResultsChat.length > 0 && currentResultIndex >= 0) {
+				// If we already have results, go to next result
+				navigateToResult(currentResultIndex + 1);
+			} else {
+				// Otherwise perform a new search
+				performSearch();
+			}
+		}
+	});
+
+	// Navigation buttons
+	prevBtn.addEventListener('click', () => {
+		if (searchResultsChat.length > 0) {
+			navigateToResult(currentResultIndex - 1);
+		}
+	});
+			
+	nextBtn.addEventListener('click', () => {
+		if (searchResultsChat.length > 0) {
+			navigateToResult(currentResultIndex + 1);
+		} else {
+			performSearch(); // If no search performed yet, do it
+		}
+	});
+			
+	// Clear search when input is cleared
+	searchInputChat.addEventListener('input', () => {
+		if (searchInputChat.value.trim() === '') {
+			clearSearch();
+		}
+	});
+			
+	// Toggle between client and server search
+	serverSearchToggle.addEventListener('change', () => {
+		if (searchInputChat.value.trim()) {
+			performSearch(); // Re-run search with new mode
+		}
+	});
+
 
 	//Checking the file size, should be maximum of 10MB 
 	function validateFileSize(file) {

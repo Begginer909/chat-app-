@@ -52,10 +52,22 @@
                         <p id="name" class="mb-1 ms-2"></p>
                         <span id="chat-status-indicator" class="ms-2 status-indicator"></span>
                         <span id="group-status-text" class="small text-muted"></span>
+                        <div class="search-container">
+                            <input type="text" id="search-input" placeholder="Search messages...">
+                            <div class="search-navigation">
+                                <button id="prev-btn" title="Previous result">↑</button>
+                                <button id="next-btn" title="Next result">↓</button>
+                            </div>
+                            <div class="search-toggle">
+                                <input type="checkbox" id="server-search">
+                                <label for="server-search">Server search</label>
+                            </div>
+                        </div>
+                        <div class="search-info" id="search-info"></div>
                         <hr class="mt-0">
                     </div>
                     <div class="chat-body">
-                        <div id="messages">
+                        <div id="messages" class="message">
                         </div>
                     </div>
                     <div class="chat-footer p-2">
