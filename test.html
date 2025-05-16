@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chat Application</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        #chat-container {
+            display: flex;
+            height: 600px;
+        }
+        #sidebar {
+            width: 250px;
+            border-right: 1px solid #ccc;
+            padding: 10px;
+        }
+        #chat-window {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        #messages {
+            flex-grow: 1;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+        }
+        #message-form {
+            display: flex;
+            margin-top: 10px;
+        }
+        #chat-tabs {
+            display: flex;
+            margin-bottom: 10px;
+        }
+        .tab {
+            padding: 10px;
+            cursor: pointer;
+            border: 1px solid #ddd;
+            margin-right: 5px;
+        }
+        .tab.active {
+            background-color: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+    <div id="chat-container">
+        <div id="sidebar">
+            <h3>Chats</h3>
+            <div id="group-list"></div>
+            <h3>Private Chats</h3>
+            <div id="user-list"></div>
+        </div>
+        
+        <div id="chat-window">
+            <div id="chat-tabs">
+                <div class="tab" data-type="group">Group Chats</div>
+                <div class="tab" data-type="private">Private Chats</div>
+            </div>
+            
+            <div id="messages"></div>
+            
+            <form id="message-form">
+                <input type="text" id="message-input" placeholder="Type a message...">
+                <input type="file" id="file-input" multiple>
+                <button type="submit">Send</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        // Socket connection
+        const socket = io('http://localhost:YOUR_PORT', { 
+            withCredentials: true 
+        });
+
+        // State management
+        let currentUser = null;
+        let currentChatType = 'group';
+        let currentChatTarget = null; // group ID or user ID
+        let groups = [];
+        let users = [];
+
+        // DOM Elements
+        const messageContainer = document.getElementById('messages');
+        const messageForm = document.getElementById('message-form');
+        const messageInput = document.getElementById('message-input');
+        const fileInput = document.getElementById('file-input');
+        const groupList = document.getElementById('group-list');
+        const userList = document.getElementById('user-list');
+        const chatTabs = document.querySelectorAll('.tab');
+
+        // Tab switching
+        chatTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                chatTabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                currentChatType = tab.dataset.type;
+                renderChatList();
+            });
+        });
+
+        // Fetch user and authentication details
+        async function fetchUserDetails() {
+            try {
+                const response = await fetch('/auth/me');
+                currentUser = await response.json();
+                
+                // Fetch groups and users after authentication
+                fetchGroups();
+                fetchUsers();
+            } catch (error) {
+                console.error('Authentication error:', error);
+            }
+        }
+
+        // Fetch available groups
+        async function fetchGroups() {
+            try {
+                const response = await fetch('/api/groups');
+                groups = await response.json();
+                renderGroupList();
+            } catch (error) {
+                console.error('Error fetching groups:', error);
+            }
+        }
+
+        // Fetch available users for private chat
+        async function fetchUsers() {
+            try {
+                const response = await fetch('/api/users');
+                users = await response.json().filter(user => user.userID !== currentUser.userID);
+                renderUserList();
+            } catch (error) {
+                console.error('Error fetching users:', error);
+            }
+        }
+
+        // Render group list
+        function renderGroupList() {
+            groupList.innerHTML = groups.map(group => 
+                `<div class="chat-item" data-id="${group.groupID}" data-type="group">
+                    ${group.groupName}
+                </div>`
+            ).join('');
+
+            // Add click event to group items
+            document.querySelectorAll('.chat-item[data-type="group"]').forEach(item => {
+                item.addEventListener('click', () => {
+                    currentChatType = 'group';
+                    currentChatTarget = item.dataset.id;
+                    loadChatHistory();
+                });
+            });
+        }
+
+        // Render user list
+        function renderUserList() {
+            userList.innerHTML = users.map(user => 
+                `<div class="chat-item" data-id="${user.userID}" data-type="private">
+                    ${user.username}
+                </div>`
+            ).join('');
+
+            // Add click event to user items
+            document.querySelectorAll('.chat-item[data-type="private"]').forEach(item => {
+                item.addEventListener('click', () => {
+                    currentChatType = 'private';
+                    currentChatTarget = item.dataset.id;
+                    loadChatHistory();
+                });
+            });
+        }
+
+        // Load chat history
+        function loadChatHistory() {
+            socket.emit('requestChatHistory', currentUser.userID);
+        }
+
+        // Handle chat history
+        socket.on('chat history', (chatHistory) => {
+            messageContainer.innerHTML = ''; // Clear previous messages
+
+            // Filter messages based on current chat type and target
+            const filteredMessages = currentChatType === 'group' 
+                ? chatHistory.groupMessages.filter(m => m.groupID == currentChatTarget)
+                : chatHistory.privateMessages.filter(m => 
+                    (m.senderID == currentChatTarget || m.receiverID == currentChatTarget)
+                );
+
+            filteredMessages.forEach(renderMessage);
+        });
+
+        // Message submission
+        messageForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const message = messageInput.value.trim();
+            const files = fileInput.files;
+            
+            if (!message && files.length === 0) return;
+
+            // Handle file upload if present
+            let fileUrls = [];
+            if (files.length > 0) {
+                const formData = new FormData();
+                for (let file of files) {
+                    formData.append('files', file);
+                }
+                formData.append('userId', currentUser.userID);
+                formData.append('chatType', currentChatType);
+                
+                if (currentChatType === 'group') {
+                    formData.append('groupID', currentChatTarget);
+                } else {
+                    formData.append('receiverID', currentChatTarget);
+                }
+
+                try {
+                    const response = await fetch('/api/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const result = await response.json();
+                    fileUrls = result.fileUrls || [];
+                } catch (error) {
+                    console.error('File upload error:', error);
+                }
+            }
+
+            // Prepare message data
+            const messageData = {
+                senderID: currentUser.userID,
+                message: message,
+                messageType: files.length > 0 ? (files[0].type.startsWith('image') ? 'image' : 'file') : 'text',
+                fileUrl: fileUrls.length > 0 ? JSON.stringify(fileUrls) : null,
+                chatType: currentChatType
+            };
+
+            // Add group or receiver ID based on chat type
+            if (currentChatType === 'group') {
+                messageData.groupID = currentChatTarget;
+            } else {
+                messageData.receiverID = currentChatTarget;
+            }
+
+            // Send message via socket
+            socket.emit('sendMessage', messageData);
+
+            // Reset form
+            messageInput.value = '';
+            fileInput.value = '';
+        });
+
+        // Render incoming messages
+        socket.on('newMessage', (message) => {
+            // Filter messages based on current chat context
+            const shouldRender = 
+                (currentChatType === 'group' && message.groupID == currentChatTarget) ||
+                (currentChatType === 'private' && 
+                    ((message.senderID == currentChatTarget && message.receiverID == currentUser.userID) ||
+                     (message.senderID == currentUser.userID && message.receiverID == currentChatTarget)));
+
+            if (shouldRender) {
+                renderMessage(message);
+            }
+        });
+
+        // Message rendering function
+        function renderMessage(message) {
+            const messageEl = document.createElement('div');
+            messageEl.classList.add('message');
+            
+            // Construct message content
+            let content = `<strong>${message.username || 'Unknown'}</strong>: `;
+            
+            if (message.message) {
+                content += message.message;
+            }
+
+            // Handle file/image attachments
+            if (message.fileUrl) {
+                const fileUrls = JSON.parse(message.fileUrl);
+                fileUrls.forEach(url => {
+                    if (url.match(/\.(jpeg|jpg|gif|png)$/i)) {
+                        content += `<img src="${url}" style="max-width: 200px;">`;
+                    } else {
+                        content += `<a href="${url}" target="_blank">Attachment</a>`;
+                    }
+                });
+            }
+
+            messageEl.innerHTML = content;
+            messageContainer.appendChild(messageEl);
+            messageContainer.scrollTop = messageContainer.scrollHeight;
+        }
+
+        // Initialize
+        fetchUserDetails();
+    </script>
+</body>
+</html>
