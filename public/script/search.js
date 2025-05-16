@@ -8,7 +8,7 @@ function debounce(func, delay) {
 	return function(...args) {
 	  clearTimeout(timeoutId);
 	  timeoutId = setTimeout(() => {
-		func.apply(this, args);
+		  func.apply(this, args);
 	  }, delay);
 	};
 }
@@ -89,6 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	
 			// Fetch all messages for this user on click
 			button.addEventListener('click', () => {
+				alert("Helo World");
 				fetchChatHistory(user.userID, chatType);
 				searchResults.style.display = 'none';
 				recentChat.style.display = 'block';

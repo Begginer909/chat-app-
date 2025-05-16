@@ -41,63 +41,74 @@ const upload = multer({
 		cb(null, true);
 	}
 });
-
-// Route for multiple file uploads
-router.post('/upload', upload.array('files', 10), (req, res) => {
-
-	if (err instanceof multer.MulterError) {
-		// A Multer error occurred
-		if (err.code === 'LIMIT_FILE_SIZE') {
-		  return res.status(400).json({ 
-			error: 'File size limit exceeded. Maximum file size is 10MB.' 
-		  });
-		}
-		return res.status(400).json({ error: err.message });
-	  } else if (err) {
-		return res.status(500).json({ error: 'Server error during upload' });
-	}
-	
-	const { senderID, receiverID, message, chatType, groupID } = req.body;
-	// Allows up to 10 files
-	if (!req.files || req.files.length === 0) {
-		if (req.body.message) {
-			return res.json({ message: 'Text-only message' });
-		}
-		return res.status(400).json({ error: 'No files uploads' });
-	}
-
-	const filesData = req.files.map((file) => ({
-		originalName: file.originalName, // Store original filename
-		storedFileName: file.newFileName, // Store renamed file
-		url: `/uploads/${file.newFileName}`,
-	}));
-
-	//Convert file Urls to a JSON string for storage in MySQL
-	const filesDataJSON = JSON.stringify(filesData);
-	const messageToSave = message && message.trim() !== '' ? message : '';
-	// Assuming only one file type is uploaded per request
-	const messageType = req.files[0].mimetype.startsWith('image') ? 'image' : 'file';
-
-	let sql;
-	let params;
-
-	if (chatType == 'group') {
-		sql = 'INSERT INTO messages (senderID, groupID, message, messageType, fileUrl) VALUES (?, ?, ?, ?, ?)';
-		params = [senderID, groupID, messageToSave, messageType, filesDataJSON];
-	} else if (chatType == 'private') {
-		sql = 'INSERT INTO private (senderID, receiverID, message, messageType, fileUrl) VALUES (?, ?, ?, ?, ?)';
-		params = [senderID, receiverID, messageToSave, messageType, filesDataJSON];
+  
+const fileFilter = (req, file, cb) => {
+	if (file.mimetype.startsWith('image/')) {
+	  cb(null, true);
 	} else {
-		return res.status(400).json({ error: 'Invalid chatType' });
+	  cb(new Error('Only image files are allowed!'), false);
 	}
+};
 
-	db.query(sql, params, (err, result) => {
-		if (err) {
-			console.error('Database error', err);
-			return res.status(500).json({ error: 'Database error' });
+// Route for multiple file uploads in message
+router.post('/upload', (req, res, next) => {
+
+	upload.array('files', 10)(req, res, function (err) {
+		if (err instanceof multer.MulterError) {
+			// A Multer error occurred
+			if (err.code === 'LIMIT_FILE_SIZE') {
+				return res.status(400).json({
+					error: 'File size limit exceeded. Maximum file size is 10MB.'
+				});
+			}
+			return res.status(400).json({ error: err.message });
+		} else if (err) {
+			return res.status(500).json({ error: 'Server error during upload' });
 		}
-		res.json({ message: 'File uploaded successfully', fileUrl: filesDataJSON });
+		
+		const { senderID, receiverID, message, chatType, groupID } = req.body;
+		// Allows up to 10 files
+		if (!req.files || req.files.length === 0) {
+			if (req.body.message) {
+				return res.json({ message: 'Text-only message' });
+			}
+			return res.status(400).json({ error: 'No files uploads' });
+		}
+
+		const filesData = req.files.map((file) => ({
+			originalName: file.originalName, // Store original filename
+			storedFileName: file.newFileName, // Store renamed file
+			url: `/uploads/${file.newFileName}`,
+		}));
+
+		//Convert file Urls to a JSON string for storage in MySQL
+		const filesDataJSON = JSON.stringify(filesData);
+		const messageToSave = message && message.trim() !== '' ? message : '';
+		// Assuming only one file type is uploaded per request
+		const messageType = req.files[0].mimetype.startsWith('image') ? 'image' : 'file';
+
+		let sql;
+		let params;
+
+		if (chatType == 'group') {
+			sql = 'INSERT INTO messages (senderID, groupID, message, messageType, fileUrl) VALUES (?, ?, ?, ?, ?)';
+			params = [senderID, groupID, messageToSave, messageType, filesDataJSON];
+		} else if (chatType == 'private') {
+			sql = 'INSERT INTO private (senderID, receiverID, message, messageType, fileUrl) VALUES (?, ?, ?, ?, ?)';
+			params = [senderID, receiverID, messageToSave, messageType, filesDataJSON];
+		} else {
+			return res.status(400).json({ error: 'Invalid chatType' });
+		}
+
+		db.query(sql, params, (err, result) => {
+			if (err) {
+				console.error('Database error', err);
+				return res.status(500).json({ error: 'Database error' });
+			}
+			res.json({ message: 'File uploaded successfully', fileUrl: filesDataJSON });
+		});
 	});
 });
+
 
 export default router;

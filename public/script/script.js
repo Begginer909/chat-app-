@@ -1,5 +1,6 @@
 const socket = io('http://localhost:3000');
-const API_BASE_URL = 'http://localhost:3000'
+const API_BASE_URL = 'http://localhost:3000';
+const BASE_URL = 'http://localhost/chat-app/server';
 const messageInput = document.getElementById('messageInput');
 const messages = document.getElementById('messages');
 const chatName = document.getElementById('name');
@@ -21,6 +22,7 @@ let chatType;
 //Variables for searching chat history
 let searchResultsChat = [];
 let currentResultIndex = -1;
+
 //Lazy loading variables
 let messagesPage = 1;
 const messagesPerPage = 20;
@@ -222,6 +224,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 function setupChat(data) {
 	userId = data.userID;
+
+	const event = new CustomEvent('userIdReady', { detail: { userId } });
+	window.dispatchEvent(event);
 
 	fullname.textContent = `${data.username}`;
 
@@ -518,7 +523,7 @@ function setupChat(data) {
 
 		if (isNewSender) {
 			const nameElement = document.createElement('p');
-			nameElement.textContent = msg.senderID === userId ? 'You' : msg.username;
+			nameElement.textContent = msg.senderID === userId ? '' : msg.username;
 			nameElement.classList.add('message-name');
 			messageWrapper.appendChild(nameElement);
 		}
@@ -640,7 +645,7 @@ function setupChat(data) {
 
 		if (msg.messageID) {
 			messageWrapper.setAttribute('data-message-id', msg.messageID);
-		}
+		} 
 
 		// Add the reaction button
 		const reactionButton = document.createElement('button');
@@ -670,6 +675,28 @@ function setupChat(data) {
 
 		const messageContentWrapper = document.createElement('div');
 		messageContentWrapper.classList.add('message-content-wrapper');
+
+		//For profile picture of users in chatbox 
+		const profileContainer = document.createElement('div');
+		profileContainer.classList.add('profile-container');
+
+		const profile = document.createElement('img');
+		profile.classList.add('profile-picture');
+		profile.alt = `${msg.username}'s profile`;
+
+		// Fetch the profile picture
+		fetch(`http://localhost:3000/api/profile/${msg.senderID}`)
+		.then(res => res.json())
+		.then(data => {
+			profile.src = `${BASE_URL}${data.profileImage}`;
+		})
+		.catch(() => {
+			// Use fallback image if failed
+			profile.src = 'http://localhost:3000/assets/default_profile.png';
+		});
+
+		profileContainer.appendChild(profile);
+
 			
 		if (msg.senderID === userId) {
 			statusIndicator.innerHTML = '<i class="fas fa-check"></i>'; // Initial "sent" status
@@ -681,18 +708,21 @@ function setupChat(data) {
 			statusContainer.appendChild(statusIndicator);
 			messageContentWrapper.appendChild(reactionButton);
 			messageContentWrapper.appendChild(messageElement);
+			messageElement.appendChild(statusContainer);
 			messageWrapper.appendChild(reactionContainer);
 			messageWrapper.appendChild(messageContentWrapper);
-			messageWrapper.appendChild(statusContainer);
+			//messageWrapper.appendChild(statusContainer);
 		} else {
 			messageContentWrapper.classList.add('receiver-layout'); // Align left
 			// For messages received, don't add status indicators
 			statusContainer.appendChild(statusIndicator);
+			messageContentWrapper.appendChild(profileContainer);
 			messageContentWrapper.appendChild(messageElement);
 			messageContentWrapper.appendChild(reactionButton);
+			messageElement.appendChild(statusContainer);
 			messageWrapper.appendChild(reactionContainer);
 			messageWrapper.appendChild(messageContentWrapper);
-			messageWrapper.appendChild(statusContainer);
+			//messageWrapper.appendChild(statusContainer);
 		}
 		messages.appendChild(messageWrapper);
 
@@ -988,8 +1018,7 @@ function setupChat(data) {
 		}
 		loadMessages(chatType, false);
 	}
-
-
+	
 	let isLoadingMoreMessages = false;
 
 	//console.log('It start to run this socket.emit');
