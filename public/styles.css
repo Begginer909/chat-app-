@@ -1,7 +1,6 @@
 @media (min-width: 647px){
     .chat-container{
         display: flex;
-        border: 1px solid black;
         font-family: Arial, Helvetica, sans-serif;
         height: fit-content;
     }
@@ -12,7 +11,6 @@
         display: flex;
         font-family: 'Roboto', sans-serif;
         height: fit-content;
-        border: 1px solid black;
     }
     .chat-image {
         max-width: 30vw;
@@ -22,12 +20,15 @@
         padding: 10px 14px;
         border-radius: 10px;
         color: black;
-        
-        display: inline-block;        /* Let the box size to content */
-        max-width: 60vw;              /* Optional: cap width on long messages */
-        overflow-wrap: break-word;    /* Break long words if needed */
-        word-break: break-word;       /* Ensure breaking behavior */
-        white-space: pre-wrap;        /* Preserve spaces and wrap naturally */
+        display: inline-block;        
+        max-width: 60vw;             
+        overflow-wrap: break-word;   
+        word-break: break-word;      
+        white-space: pre-wrap;     
+    }
+
+    #imageIcon, #emojiButton{
+        display: none;  
     }
 }
 
@@ -118,7 +119,7 @@ textarea {
     overflow-anchor: auto;
     flex-grow: 1;
     padding: 10px;
-    max-height: 55vh;
+    max-height: 100%;
     flex-grow: 1;
     overflow-y: auto;
 }
@@ -127,7 +128,7 @@ textarea {
 .message-wrapper {
     display: block;
     flex-direction: column;
-    margin-bottom: 10px;
+    margin-bottom: 5px;
 }
 
 /* User's name should be visible above the message */
@@ -206,46 +207,45 @@ button {
 
 /* Style for the preview container */
 #previewContent {
-    display: flex;         /* Aligns items horizontally */
-    flex-wrap: nowrap;     /* Prevents wrapping */
-    gap: 10px;             /* Adds spacing between images */
-    overflow-x: hidden;      /* Enables horizontal scrolling */
-    max-width: 100%;       /* Ensures it fits within the container */
-    padding-bottom: 5px;   /* Space for scrollbar */
-    white-space: nowrap;   /* Prevents images from stacking */
+    display: flex;         
+    flex-wrap: nowrap;     
+    gap: 10px;             
+    overflow-x: hidden;      
+    max-width: 100%;       
+    padding-bottom: 5px;   
+    white-space: nowrap;   
 }
 
 #previewContainer {
+    display: none;
     height: auto;
-    overflow-y: auto;
-    max-height: 150px;
+    overflow-y: hidden;
     border: 1px dashed #007bff;
     background-color: rgba(0, 123, 255, 0.05);
     margin-bottom: 10px;
     padding: 10px;
-    display: none;
 }
 
 #previewContainer.active {
   display: block;
-  max-height: 150px;
+  max-height: 100px;
 }
 
 .preview-item {
-    display: inline-block;
-    margin-right: 10px;
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
     position: relative;
 }
 
 .preview-image {
-    max-width: 100px;
-    max-height: 100px;
+    max-width: 70px;
+    max-height: 70px;
 }
 
 .remove-file {
     position: absolute;
-    top: -5px;
-    right: -5px;
+    top: 0px;
+    right: 0px;
     background: red;
     color: white;
     border: none;
@@ -371,19 +371,20 @@ a {
 }
 
 .typing-indicator {
-    bottom: 70px;
-    left: 20px;
     background-color: rgba(245, 245, 245, 0.9);
     border-radius: 15px;
     padding: 5px 15px;
     font-size: 14px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    z-index: 100;
+    z-index: 1;
     max-width: 80%;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     animation: fadeIn 0.3s;
+    clear: both;
+    margin: 8px 0;
+    border: 1px solid black;
   }
   
   @keyframes fadeIn {
@@ -423,11 +424,7 @@ a {
     padding-left: 15px !important;
     text-align: left;
 }
-
-/* In the chat header, style for the current chat user status */
-.chat-header {
-    padding: 10px;
-}
+    
 
 .chat-header .status-indicator {
     margin-left: 8px;

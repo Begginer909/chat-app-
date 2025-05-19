@@ -35,7 +35,7 @@
           <div class="sidebar col-3 col-md-3" id="sidebar">
               <button class="btn-close d-md-none" onclick="toggleSidebar()"></button>
               <!-- User list here -->
-              <div class="g-3 border-end pe-3">
+              <div class="chat-tab g-3 border-end pe-3">
                   <div class="d-flex">
                       <input type="search" id="search" class="form-control me-2" placeholder="Search People">
                       <button type="button" id="createGroup" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#groupModal">
@@ -57,7 +57,8 @@
                   <p id="name" class="mb-1 ms-2"></p>
                   <span id="chat-status-indicator" class="ms-2 status-indicator"></span>
                   <span id="group-status-text" class="small text-muted"></span>
-                  <div class="search-container">
+                  <!--Searching for previous messages -->
+                  <div class="search-container" style="display: none;">
                       <input type="text" id="search-input" placeholder="Search messages...">
                       <div class="search-navigation">
                           <button id="prev-btn" title="Previous result">↑</button>
@@ -72,23 +73,22 @@
                   <hr class="mt-0">
               </div>
               <div class="chat-body">
-                  <div id="messages" class="message"></div>
+                  <div id="messages" class="message">
+                  </div>
               </div>
               <div class="chat-footer mt-2">
-                <div id="typingIndicator" class="typing-indicator mb-3" style="display:none;"></div>
+                <div id="typingIndicator" class="typing-indicator mb-3"></div>
                 <div id="previewContainer">
                     <div id="previewContent"></div>
                 </div>
-                  <div class="input-area gap-2">
+                  <div class="input-area">
                       <!-- Buttons -->
-                      <div class="d-flex gap-2">
                           <input type="file" id="fileInput" style="display: none;">
                           <input type="file" id="imageInput" accept="image/*" style="display: none;">
                           <button class="btn btn-secondary" id="fileIcon"><i class="fas fa-paperclip"></i></button>
                           <button class="btn btn-secondary" id="imageIcon"><i class="fas fa-image"></i></button>
                           <button class="btn btn-secondary" id="emojiButton"><i class="far fa-smile"></i></button>
-                      </div>
-              
+                          
                       <!-- Input expands to fill -->
                       <textarea type="text" id="messageInput" class="form-control flex-grow-1" placeholder="Type a message..."></textarea>
               
@@ -194,10 +194,6 @@
             $('.chat-body').css('flex-grow', '1'); // Full height when no preview
           }
         }
-
-        setInterval(() => {
-          console.log($('.chat-body').css('flex-grow'));
-        }, 1000);
 
     </script>
     <script src="http://localhost:3000/socket.io/socket.io.js"></script>

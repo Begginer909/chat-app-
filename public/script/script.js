@@ -44,8 +44,10 @@ let currentReactionTarget = null;
 
 // Add this function inside the setupChat function after setting up other socket listeners
 function setupTypingIndicator() {
+	console.log("Typing indicator working");
 	// Create typing indicator element if it doesn't exist
 	if (!document.getElementById('typingIndicator')) {
+		console.log("Createad a indicator");
 		const typingIndicator = document.createElement('div');
 		typingIndicator.id = 'typingIndicator';
 		typingIndicator.classList.add('typing-indicator');
@@ -53,8 +55,10 @@ function setupTypingIndicator() {
 		typingIndicator.style.fontStyle = 'italic';
 		typingIndicator.style.color = '#666';
 		typingIndicator.style.padding = '5px 10px';
+		typingIndicator.textContent = 'Someone is typing...';
 
-		document.querySelector('.chat-body').appendChild(typingIndicator);
+		messages.appendChild(typingIndicator);
+		typingIndicator.scrollIntoView({ behavior: 'smooth' });
 	}
 
 	// Listen for typing event from server
@@ -64,7 +68,7 @@ function setupTypingIndicator() {
 		// Only show typing indicator if we're in the correct chat
 		if (chatType === 'private' && userID === currentChatUserID) {
 			typingIndicator.textContent = `${username} is typing...`;
-			typingIndicator.style.display = 'block';
+			typingIndicator.style.display = 'inline-block';
 		} else if (chatType === 'group' && groupID === currentChatGroupID) {
 			// Add this user to the list of typing users
 			typingUsers.set(userID, username);
@@ -73,8 +77,8 @@ function setupTypingIndicator() {
 				typingIndicator.textContent = `${username} is typing...`;
 			} else {
 				typingIndicator.textContent = `Someone is typing...`;
-			}
-			typingIndicator.style.display = 'block';
+			}	
+			typingIndicator.style.display = 'inline-block';
 		}
 
 		// Make sure typing indicator is visible
@@ -549,7 +553,6 @@ function setupChat(data) {
 		const statusIndicator = document.createElement('span');
 		statusIndicator.classList.add('message-status');
 
-		//console.log(`${msg.fileUrl} 222`);
 		if (msg.messageType === 'image' && msg.fileUrl) {
 			try {
 				const fileUrls = JSON.parse(msg.fileUrl);
