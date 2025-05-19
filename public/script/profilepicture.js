@@ -6,7 +6,6 @@ window.addEventListener('userIdReady', (e) => {
 
         // Load current profile picture
         loadProfilePicture(userId);
-        console.log("ssdd22323d");
     }
     
     // Profile picture click handler - opens the modal
@@ -15,7 +14,6 @@ window.addEventListener('userIdReady', (e) => {
         profilePicture.addEventListener('click', function() {
             const modal = new bootstrap.Modal(document.getElementById('profilePictureModal'));
             modal.show();
-            console.log(userId, "hh");
         });
     }
     
@@ -157,7 +155,7 @@ function loadProfilePicture(userID) {
             console.error('Error loading profile picture:', error);
             // Use default image on error
             const defaultImage = `${API_BASE_URL}/assets/default_profile.png`;
-            document.getElementById('user-profile-image').src = defultImage;
+            document.getElementById('user-profile-image').src = defaultImage;
             document.getElementById('preview-profile-image').src = defaultImage;
         });
 }

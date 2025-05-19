@@ -201,12 +201,14 @@ router.get('/:userID', (req, res) => {
                     return res.json({ profileImage: `${API_BASE_URL}/assets/default_profile.png` });
                 }
                 
+                /*
                 const gender = userResults[0].gender;
                 const defaultImage = gender === 'female' 
                     ? '/assets/default_female.png' 
                     : '/assets/default_male.png';
                 
                 res.json({ profileImage: defaultImage });
+                */
             });
         } else {
             res.json({ profileImage: results[0].profileImage });

@@ -29,7 +29,7 @@ const messagesPerPage = 20;
 let isLoadingMoreMessages = false;
 let hasMoreMessages = true;
 
-// Add these variables at the top with your other variables
+// Typing Indicator
 let typingTimer;
 const typingDelay = 1000; // Delay in ms (1 second)
 let isTyping = false;
@@ -53,6 +53,7 @@ function setupTypingIndicator() {
 		typingIndicator.style.fontStyle = 'italic';
 		typingIndicator.style.color = '#666';
 		typingIndicator.style.padding = '5px 10px';
+
 		document.querySelector('.chat-body').appendChild(typingIndicator);
 	}
 
@@ -232,7 +233,8 @@ function setupChat(data) {
 
 	// Call the scroll lister for setup
 	setupMessagesScrollListener();
-	// Add this line after socket event listeners are set up
+
+	// Call the Typing indicator function
 	setupTypingIndicator();
 
 	socket.on('connect', () => {
@@ -684,15 +686,18 @@ function setupChat(data) {
 		profile.classList.add('profile-picture');
 		profile.alt = `${msg.username}'s profile`;
 
+		profile.src = `${API_BASE_URL}/assets/default_profile.png`;
+
 		// Fetch the profile picture
 		fetch(`http://localhost:3000/api/profile/${msg.senderID}`)
 		.then(res => res.json())
 		.then(data => {
-			profile.src = `${BASE_URL}${data.profileImage}`;
+			profile.src = data.profileImage.startsWith('http') 
+			? data.profileImage 
+			: `${BASE_URL}${data.profileImage}`;
 		})
-		.catch(() => {
-			// Use fallback image if failed
-			profile.src = 'http://localhost:3000/assets/default_profile.png';
+		.catch((err) => {
+			console.error('Error loading profile picture:', err);
 		});
 
 		profileContainer.appendChild(profile);
@@ -1620,7 +1625,9 @@ function setupChat(data) {
 
 	// Function to display file previews
 	function displayPreview(file) {
-		$('#previewContainer').show();
+		$('#previewContainer').addClass('active');
+
+		updateChatBodyFlex();
 
 		const reader = new FileReader();
 		reader.onload = function (e) {
@@ -1638,7 +1645,8 @@ function setupChat(data) {
 				.click(function () {
 					previewItem.remove();
 					if ($('#previewContent').children().length === 0) {
-						$('#previewContainer').hide();
+						$('#previewContainer').removeClass('active');
+						updateChatBodyFlex();
 					}
 				});
 
@@ -1651,8 +1659,9 @@ function setupChat(data) {
 	// Clear preview after sending
 	function clearPreview() {
 		selectedFiles = [];
-		$('#previewContainer').hide();
 		$('#previewContent').html('');
+		$('#previewContainer').removeClass('active');
+		updateChatBodyFlex();
 	}
 
 	$(document).ready(function () {
@@ -1746,7 +1755,7 @@ function setupChat(data) {
 
 	//Keypress so when the user hit enter it will automatically sends a message, because it ables to call a fucntion
 	messageInput.addEventListener('keypress', function (e) {
-		if (e.key === 'Enter') {
+		if (e.key === 'Enter' && !e.shiftKey) {
 			e.preventDefault(); // Prevent default Enter behavior
 			const message = $('#messageInput').val().trim();
 			// Send each selected file individually

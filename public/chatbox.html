@@ -47,7 +47,7 @@
                   <div id="recentchats"></div>
               </div>
           </div>
-            <!-- Chat Panel -->
+          <!-- Chat Panel -->
           <div class="chat-panel col-12 col-md-9 flex-grow-1 position-relative">
               <!-- Toggle button for mobile -->
               <button class="btn btn-primary d-md-none position-absolute top-0 start-0 m-2" onclick="toggleSidebar()">☰</button>
@@ -72,14 +72,13 @@
                   <hr class="mt-0">
               </div>
               <div class="chat-body">
-                  <div id="messages" class="message">
-                  </div>
+                  <div id="messages" class="message"></div>
               </div>
-              <div class="chat-footer">
-                  <div id="typingIndicator" class="typing-indicator" style="display:none;"></div>
-                  <div id="previewContainer" style="display: none;">
+              <div class="chat-footer mt-2">
+                <div id="typingIndicator" class="typing-indicator mb-3" style="display:none;"></div>
+                <div id="previewContainer">
                     <div id="previewContent"></div>
-                  </div>
+                </div>
                   <div class="input-area gap-2">
                       <!-- Buttons -->
                       <div class="d-flex gap-2">
@@ -94,7 +93,7 @@
                       <textarea type="text" id="messageInput" class="form-control flex-grow-1" placeholder="Type a message..."></textarea>
               
                       <!-- Send button -->
-                      <button class="btn btn-primary w-75" id="sendButton">Send</button>
+                      <button class="btn btn-primary w-25" id="sendButton">Send</button>
                   </div>
               </div>
           </div>
@@ -155,7 +154,7 @@
     </div>
 
     <!-- Profile Picture Modal -->
-<div class="modal fade" id="profilePictureModal" tabindex="-1" aria-labelledby="profilePictureModalLabel" aria-hidden="true">
+  <div class="modal fade" id="profilePictureModal" tabindex="-1" aria-labelledby="profilePictureModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header">
@@ -180,13 +179,26 @@
             </div>
           </form>
         </div>
-      </div>
     </div>
+  </div>
 
     <script>
         function toggleSidebar() {
             document.getElementById("sidebar").classList.toggle("active");
         }
+
+        function updateChatBodyFlex() {
+          if ($('#previewContainer').hasClass('active')) {
+            $('.chat-body').css('flex-grow', '1'); // Shrink chat messages area
+          } else {
+            $('.chat-body').css('flex-grow', '1'); // Full height when no preview
+          }
+        }
+
+        setInterval(() => {
+          console.log($('.chat-body').css('flex-grow'));
+        }, 1000);
+
     </script>
     <script src="http://localhost:3000/socket.io/socket.io.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
